@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:18
+    container_name: crypto_dash_db
+    environment:
+      POSTGRES_DB: crypto_dash
+      POSTGRES_USER: crypto_user
+      POSTGRES_PASSWORD: crypto_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./contracts/db_schema.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+  backend:
+    build:
+      context: ./backend
+    container_name: crypto_dash_backend
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://crypto_user:crypto_password@db:5432/crypto_dash
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: crypto_dash_frontend
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
